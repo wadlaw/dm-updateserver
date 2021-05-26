@@ -18,6 +18,8 @@ async function requestToken() {
     const username = process.env.USERNAME
     const password = process.env.PASSWORD
     
+    //console.log(`subdomain: ${subdomain} | username: ${username} | password: ${password}`);
+
     let response = await fetch('https://api.thegoodtill.com/api/login', { 
             method: 'POST', 
             headers: { "Content-Type": "application/json" }, 
@@ -68,6 +70,7 @@ async function getSalesData(fromDate, toDate) {
     try {
         const token = await login();
         console.log('Token acquired')
+        //console.log(token);
         
         const data = await getSales(fromDate, toDate, token)
         console.log(`${data.sales.length} transactions downloaded`)
@@ -86,6 +89,7 @@ async function getSalesData(fromDate, toDate) {
 };
 
 async function getSales(fromDate, toDate, token) {
+    let errorDetected = false;
     let from = dateParse(fromDate);
     let to = dateParse(toDate)
     let bufferFrom = new Date(from);
@@ -102,13 +106,41 @@ async function getSales(fromDate, toDate, token) {
         }
         // console.log('bufferTo after min-ing is set to ', bufferTo )
         //let resp = await getJSONResponse(formatDateString(bufferFrom), formatDateString(bufferTo), token)
-        let resp = await getJSONResponse2(token, formatDateString(bufferFrom), formatDateString(bufferTo))
-        let data = JSON.parse(resp)
-        jsonData.sales = jsonData.sales.concat(data.data)
-        console.log(`${data.data.length} new transactions downloaded. Total of ${jsonData.sales.length} downloaded`)
+        await getJSONResponse2(token, formatDateString(bufferFrom), formatDateString(bufferTo))
+            .then(response => {
+                let substrings = response.split("\n");
+                let status = substrings[0].split(" ")[1];
+                console.log(`goodtill response: ${status}`);
+                
+                if (status.slice(0,1) == "2") {
+                    // success response, reurn json string which is last substring
+                    return substrings[substrings.length - 1];
+                } else {
+
+                    throw new Error(`${status} response received from goodtill`);
+                }
+            })
+            .then(json => {
+                let data = JSON.parse(json);
+                jsonData.sales = jsonData.sales.concat(data.data);
+                console.log(`${data.data.length} new transactions downloaded. Total of ${jsonData.sales.length} downloaded`)
+            })
+            .catch(err => {
+                errorDetected = true;
+                jsonData.errorMessage = err.message;
+                console.error(err);
+            })
+        //console.log(resp);
+        // let data = JSON.parse(resp)
+        // if (!data.status) {
+        //     console.log(`Data not retrieved. ${data.status_code}: ${data.message}`)
+        // } else {
+        //     jsonData.sales = jsonData.sales.concat(data.data)
+        //     console.log(`${data.data.length} new transactions downloaded. Total of ${jsonData.sales.length} downloaded`)
+        // }
         bufferFrom.setDate(bufferFrom.getDate() + 21);
     }
-    while (bufferFrom < to)
+    while (!errorDetected && bufferFrom < to)
     
     return jsonData
     
@@ -150,7 +182,7 @@ async function getJSONResponse(fromDate, toDate, token) {
 
 async function getJSONResponse2(token, fromDate = '', toDate = '') {
     //build request 
-    let curlParams = `-X GET -H "Content-Type: application/json" -H "Authorization: Bearer ${token}"`; //add message headers
+    let curlParams = `-i -X GET -H "Content-Type: application/json" -H "Authorization: Bearer ${token}"`; //add message headers
     curlParams += (fromDate && toDate) ? ` -d '{"from": "${fromDate} 00:00:00", "to": "${toDate} 23:59:59"}'` : ""; //add message body
     curlParams += ` --url "${getURL()}"`; //add url
     //console.log(curlParams);
