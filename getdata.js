@@ -233,7 +233,7 @@ function saveSalesData(salesData) {
         
         // CLEAN UP ====================================================
         console.log("CLEAN UP=================");
-        db.run("DROP TABLE updateMatches");
+        db.run("DROP TABLE IF EXISTS updateMatches");
     });
 
     
