@@ -1,5 +1,6 @@
 //const { response } = require('express');
 const { spawn } = require('child_process');
+const { json } = require('express');
 const fetch = require('node-fetch');
 
 //import environment variables
@@ -55,7 +56,8 @@ function getURL() {
     switch (process.argv[2]) {
         default:
         case "sales":
-            return "https://api.thegoodtill.com/api/external/get_sales"
+            // return "https://api.thegoodtill.com/api/external/get_sales"
+            return "https://api.thegoodtill.com/api/external/get_sales_details";
             break;
         case "products":
             return "https://api.thegoodtill.com/api/products"
@@ -64,7 +66,7 @@ function getURL() {
     }
 }
 
-async function getSalesData(fromDate, toDate) {
+async function getSalesData(fromDate, offset) {
     console.log('Requesting access token...')
 
     try {
@@ -72,7 +74,7 @@ async function getSalesData(fromDate, toDate) {
         console.log('Token acquired')
         //console.log(token);
         
-        const data = await getSales(fromDate, toDate, token)
+        const data = await getSales(fromDate, offset, token)
         console.log(`${data.sales.length} transactions downloaded`)
         // console.log('Logging out...')
         const inactivate = await logout(token)
@@ -88,32 +90,25 @@ async function getSalesData(fromDate, toDate) {
 
 };
 
-async function getSales(fromDate, toDate, token) {
+async function getSales(fromDate, offset, token) {
     let errorDetected = false;
-    let from = dateParse(fromDate);
-    let to = dateParse(toDate)
-    let bufferFrom = new Date(from);
+    let recordsReturned = 0;
+    const limit = 50;
+    // let from = dateParse(fromDate);
+    // let to = dateParse(toDate)
+    // let bufferFrom = new Date(from);
     const jsonData = { "sales": [] }
     // console.log(from, " - ", to )
     do {
-        let bufferTo = new Date(bufferFrom)
-        bufferTo.setDate(bufferTo.getDate() + 20)
-        // console.log('bufferFrom is set to ', bufferFrom)
-        // console.log('bufferTo is set to ', bufferTo)
-        if (bufferTo > to) {
-            bufferTo = new Date(to)
-            //bufferTo.setDate(to.getDate())
-        }
-        // console.log('bufferTo after min-ing is set to ', bufferTo )
-        //let resp = await getJSONResponse(formatDateString(bufferFrom), formatDateString(bufferTo), token)
-        await getJSONResponse2(token, formatDateString(bufferFrom), formatDateString(bufferTo))
+
+        await getJSONResponse2(token, fromDate, offset + jsonData.sales.length, limit)
             .then(response => {
                 let substrings = response.split("\n");
                 let status = substrings[0].split(" ")[1];
                 console.log(`goodtill response: ${status}`);
                 
                 if (status.slice(0,1) == "2") {
-                    // success response, reurn json string which is last substring
+                    // success response, return json string which is last substring
                     return substrings[substrings.length - 1];
                 } else {
 
@@ -122,6 +117,7 @@ async function getSales(fromDate, toDate, token) {
             })
             .then(json => {
                 let data = JSON.parse(json);
+                recordsReturned = data.data.length;
                 jsonData.sales = jsonData.sales.concat(data.data);
                 console.log(`${data.data.length} new transactions downloaded. Total of ${jsonData.sales.length} downloaded`)
             })
@@ -130,17 +126,9 @@ async function getSales(fromDate, toDate, token) {
                 jsonData.errorMessage = err.message;
                 console.error(err);
             })
-        //console.log(resp);
-        // let data = JSON.parse(resp)
-        // if (!data.status) {
-        //     console.log(`Data not retrieved. ${data.status_code}: ${data.message}`)
-        // } else {
-        //     jsonData.sales = jsonData.sales.concat(data.data)
-        //     console.log(`${data.data.length} new transactions downloaded. Total of ${jsonData.sales.length} downloaded`)
-        // }
-        bufferFrom.setDate(bufferFrom.getDate() + 21);
+
     }
-    while (!errorDetected && bufferFrom < to)
+    while (!errorDetected && recordsReturned == limit)
     
     return jsonData
     
@@ -180,14 +168,20 @@ async function getJSONResponse(fromDate, toDate, token) {
     return results;
 }
 
-async function getJSONResponse2(token, fromDate = '', toDate = '') {
+async function getJSONResponse2(token, fromDate = '', offset, limit) {
+    // {
+    //     "from": "2021-01-13 00:00:00",
+    //     "to": "2021-01-13 23:59:59",
+    //     "limit": 3,
+    //     "offset": 10
+    // }
     //build request 
     let curlParams = `-i -X GET -H "Content-Type: application/json" -H "Authorization: Bearer ${token}"`; //add message headers
-    curlParams += (fromDate && toDate) ? ` -d '{"from": "${fromDate} 00:00:00", "to": "${toDate} 23:59:59"}'` : ""; //add message body
+    curlParams += (fromDate) ? ` -d '{"from": "${fromDate} 00:00:00", "limit": ${limit}, "offset": ${offset} }'` : ""; //add message body
     curlParams += ` --url "${getURL()}"`; //add url
     //console.log(curlParams);
     //const curlParams = `-X GET -H "Content-Type: application/json" -H "Authorization: Bearer ${token}" -d '{"from": "${fromDate} 00:00:00", "to": "${toDate} 23:59:59"}' --url "${url}"`;
-    console.log(`retrieving data from ${fromDate} to ${toDate}...`)
+    console.log(`retrieving data from ${fromDate} offset by ${offset} sales...`)
     const results = await captureStream(curlParams)
     // console.log('Results of captureStream received. ',`Results type is: ${typeof results}`)
     
