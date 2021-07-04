@@ -49,19 +49,28 @@ async function logout(token) {
     
 }
 
-function getURL() {
+function getURL(override = '') {
     // return the correct url based on the parameter passed to the script
     //console.log(process.argv)
-    
-    switch (process.argv[2]) {
-        default:
-        case "sales":
-            // return "https://api.thegoodtill.com/api/external/get_sales"
-            return "https://api.thegoodtill.com/api/external/get_sales_details";
-            break;
+    let val = process.argv[2];
+    if (override) val = override;
+
+    switch (val) {
+        
         case "products":
-            return "https://api.thegoodtill.com/api/products"
+            return "https://api.thegoodtill.com/api/products";
             break;
+        case "categories":
+            return "https://api.thegoodtill.com/api/categories";
+            break;
+        case "modifiers":
+            return "https://api.thegoodtill.com/api/modifiers";
+            break;
+        default:
+            case "sales":
+                // return "https://api.thegoodtill.com/api/external/get_sales"
+                return "https://api.thegoodtill.com/api/external/get_sales_details";
+                break;
         
     }
 }
@@ -134,33 +143,98 @@ async function getSales(fromDate, offset, token) {
     
 }
 
-async function getProductsData(token) {
+// async function getProductsData() {
+//     console.log('Requesting access token...')
+
+//     try {
+//         const token = await login();
+//         console.log('Token acquired')
+        
+//         const resp = await fetch(getURL("products"), {
+//             method: 'GET',
+//             headers: {
+//                 'Content-Type': 'application/json',
+//                 'Authorization': `Bearer ${token}`
+//             }
+//         })
+//         const products = await resp.json();
+//         // const products = await getJSONResponse(geturl(), token)
+//         console.log(`${products.data.length} products downloaded`)
+//         // console.log('Logging out...')
+//         const inactivate = await logout(token)
+//         console.log(inactivate.message)
+
+//         return products
+
+//     } catch (err) {
+//         console.log('error detected (getProductsData)')
+//         console.log(err)
+//     }
+// }
+
+// async function getCategoriesData() {
+//     console.log('Requesting access token...')
+
+//     try {
+//         const token = await login();
+//         console.log('Token acquired')
+        
+//         const resp = await fetch(getURL("categories"), {
+//             method: 'GET',
+//             headers: {
+//                 'Content-Type': 'application/json',
+//                 'Authorization': `Bearer ${token}`
+//             }
+//         })
+//         const categories = await resp.json();
+//         // const products = await getJSONResponse(geturl(), token)
+//         console.log(`${categories.data.length} categories downloaded`)
+//         // console.log('Logging out...')
+//         const inactivate = await logout(token)
+//         console.log(inactivate.message)
+
+//         return categories
+
+//     } catch (err) {
+//         console.log('error detected (getCategoriesData)')
+//         console.log(err)
+//     }
+// }
+
+
+async function getData(dataType) {
     console.log('Requesting access token...')
 
     try {
         const token = await login();
         console.log('Token acquired')
         
-        const products = await getJSONResponse2(token)
-        console.log(`${products.data.length} products downloaded`)
+        const resp = await fetch(getURL(dataType), {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        })
+        const retrievedData = await resp.json();
+        // const products = await getJSONResponse(geturl(), token)
+        console.log(`${retrievedData.data.length} ${dataType} downloaded`)
         // console.log('Logging out...')
         const inactivate = await logout(token)
         console.log(inactivate.message)
 
-        return products
+        return retrievedData
 
     } catch (err) {
-        console.log('error detected (getProductsData)')
+        console.log(`error detected (getData(${dataType}))`)
         console.log(err)
     }
-    
-
 }
 
-async function getJSONResponse(fromDate, toDate, token) {
-
-    const curlParams = `-X GET -H "Content-Type: application/json" -H "Authorization: Bearer ${token}" -d '{"from": "${fromDate} 00:00:00", "to": "${toDate} 23:59:59"}' --url "https://api.thegoodtill.com/api/external/get_sales"`;
-    console.log(`retrieving data from ${fromDate} to ${toDate}...`)
+async function getJSONResponse(url, token) {
+    
+    const curlParams = `-i -X GET -H "Content-Type: application/json" -H "Authorization: Bearer ${token}" --url ${url}`;
+    console.log(`retrieving data from ${url}...`)
     const results = await captureStream(curlParams)
     // console.log('Results of captureStream received. ',`Results type is: ${typeof results}`)
     
@@ -169,12 +243,6 @@ async function getJSONResponse(fromDate, toDate, token) {
 }
 
 async function getJSONResponse2(token, fromDate = '', offset, limit) {
-    // {
-    //     "from": "2021-01-13 00:00:00",
-    //     "to": "2021-01-13 23:59:59",
-    //     "limit": 3,
-    //     "offset": 10
-    // }
     //build request 
     let curlParams = `-i -X GET -H "Content-Type: application/json" -H "Authorization: Bearer ${token}"`; //add message headers
     curlParams += (fromDate) ? ` -d '{"from": "${fromDate} 00:00:00", "limit": ${limit}, "offset": ${offset} }'` : ""; //add message body
@@ -260,4 +328,4 @@ function formatDateString(theDate) {
     return dateString;
 }
 
-module.exports = { "getSalesData": getSalesData, "getProductsData": getProductsData, "formatDateString": formatDateString }
+module.exports = { "getSalesData": getSalesData, "getData": getData, "formatDateString": formatDateString }
