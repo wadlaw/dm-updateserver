@@ -49,13 +49,10 @@ async function logout(token) {
     
 }
 
-function getURL(override = '') {
+function getURL(entity) {
     // return the correct url based on the parameter passed to the script
-    //console.log(process.argv)
-    let val = process.argv[2];
-    if (override) val = override;
 
-    switch (val) {
+    switch (entity) {
         
         case "products":
             return "https://api.thegoodtill.com/api/products";
@@ -66,11 +63,11 @@ function getURL(override = '') {
         case "modifiers":
             return "https://api.thegoodtill.com/api/modifiers";
             break;
+        case "sales":
         default:
-            case "sales":
-                // return "https://api.thegoodtill.com/api/external/get_sales"
-                return "https://api.thegoodtill.com/api/external/get_sales_details";
-                break;
+            // return "https://api.thegoodtill.com/api/external/get_sales"
+            return "https://api.thegoodtill.com/api/external/get_sales_details";
+            break;
         
     }
 }
@@ -246,7 +243,7 @@ async function getJSONResponse2(token, fromDate = '', offset, limit) {
     //build request 
     let curlParams = `-i -X GET -H "Content-Type: application/json" -H "Authorization: Bearer ${token}"`; //add message headers
     curlParams += (fromDate) ? ` -d '{"from": "${fromDate} 00:00:00", "limit": ${limit}, "offset": ${offset} }'` : ""; //add message body
-    curlParams += ` --url "${getURL()}"`; //add url
+    curlParams += ` --url "${getURL("sales")}"`; //add url
     //console.log(curlParams);
     //const curlParams = `-X GET -H "Content-Type: application/json" -H "Authorization: Bearer ${token}" -d '{"from": "${fromDate} 00:00:00", "to": "${toDate} 23:59:59"}' --url "${url}"`;
     console.log(`retrieving data from ${fromDate} offset by ${offset} sales...`)

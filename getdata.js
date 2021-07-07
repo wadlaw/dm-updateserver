@@ -5,6 +5,64 @@ require('dotenv').config();
 // - if it doesn't, it will be created and connected to
 const db = new sqlite.Database('../database/db.sqlite');
 
+function updateSales() {
+    let fromDateString = "2019-01-01";
+    let offset = 0;
+    db.get("SELECT FromDate, OffsetNumber FROM v_LatestUpdate", (err, row) => {
+        if (!err && row.FromDate) {
+            fromDateString = row.FromDate;
+            offset = row.OffsetNumber;
+        }
+        getSalesData(fromDateString, offset)
+        .then(data => {
+            console.log('data received in getsales.js');
+            saveSalesData(data)
+            //console.log(data)
+            //salesData = data;
+        })
+        .catch(err => {
+            console.log("err received by getData.js")
+            console.log(err)
+        });
+    })
+}
+
+function updateCategories() {
+    getData("categories")
+    .then(data => {
+        console.log("categories data received");
+        saveCategoriesData(data);
+    })
+    .catch(err => {
+        console.log("err received by getData.js")
+        console.log(err)
+    });
+}
+
+function updateProducts() {
+    getData("products")
+    .then(data => {
+        console.log("products data received");
+        saveProductsData(data);
+    })
+    .catch(err => {
+        console.log("err received by getData.js")
+        console.log(err)
+    });
+}
+
+function updateModifiers() {
+    getData("modifiers")
+    .then(data => {
+        console.log("modifiers data received");
+        saveModifiersData(data);
+    })
+    .catch(err => {
+        console.log("err received by getData.js")
+        console.log(err)
+    });
+}
+
 function createSalesTable(tableName = 'Sales') {
     const sales_id = "id TEXT";
     const outlet_id = "outlet_id TEXT";
@@ -79,69 +137,69 @@ function createCategoriesTable(tableName = 'Categories') {
 // Set default dates
 //let fromDateString = "2019-01-01";
 //default values - if we are dealing with an empty database, start from this point
-switch (process.argv[2]) {
-    case "products":
-        // import products from goodtill
-        getData("products")
-        .then(data => {
-            console.log("products data received");
-            saveProductsData(data);
-        })
-        .catch(err => {
-            console.log("err received by getData.js")
-            console.log(err)
-        });
+// switch (process.argv[2]) {
+//     case "products":
+//         // import products from goodtill
+//         getData("products")
+//         .then(data => {
+//             console.log("products data received");
+//             saveProductsData(data);
+//         })
+//         .catch(err => {
+//             console.log("err received by getData.js")
+//             console.log(err)
+//         });
 
-        break;
-    case "categories":
-        // import categories from goodtill
-        getData("categories")
-        .then(data => {
-            console.log("categories data received");
-            saveCategoriesData(data);
-        })
-        .catch(err => {
-            console.log("err received by getData.js")
-            console.log(err)
-        });
-        break;
-    case "modifiers":
-        // import products from goodtill
-        getData("modifiers")
-        .then(data => {
-            console.log("modifiers data received");
-            saveModifiersData(data);
-        })
-        .catch(err => {
-            console.log("err received by getData.js")
-            console.log(err)
-        });
+//         break;
+//     case "categories":
+//         // import categories from goodtill
+//         getData("categories")
+//         .then(data => {
+//             console.log("categories data received");
+//             saveCategoriesData(data);
+//         })
+//         .catch(err => {
+//             console.log("err received by getData.js")
+//             console.log(err)
+//         });
+//         break;
+//     case "modifiers":
+//         // import products from goodtill
+//         getData("modifiers")
+//         .then(data => {
+//             console.log("modifiers data received");
+//             saveModifiersData(data);
+//         })
+//         .catch(err => {
+//             console.log("err received by getData.js")
+//             console.log(err)
+//         });
 
-        break;
-    case "sales":
-    case "undefined":
-        // default: import latest sales from goodtill
-        let fromDateString = "2019-01-01";
-        let offset = 0;
-        db.get("SELECT FromDate, OffsetNumber FROM v_LatestUpdate", (err, row) => {
-            if (!err && row.FromDate) {
-                fromDateString = row.FromDate;
-                offset = row.OffsetNumber;
-            }
-            getSalesData(fromDateString, offset)
-            .then(data => {
-                console.log('data received in getsales.js');
-                saveSalesData(data)
-                //console.log(data)
-                //salesData = data;
-            })
-            .catch(err => {
-                console.log("err received by getData.js")
-                console.log(err)
-            });
-        })
-        break;
-}
+//         break;
+//     case "sales":
+//     case "undefined":
+//         // default: import latest sales from goodtill
+//         let fromDateString = "2019-01-01";
+//         let offset = 0;
+//         db.get("SELECT FromDate, OffsetNumber FROM v_LatestUpdate", (err, row) => {
+//             if (!err && row.FromDate) {
+//                 fromDateString = row.FromDate;
+//                 offset = row.OffsetNumber;
+//             }
+//             getSalesData(fromDateString, offset)
+//             .then(data => {
+//                 console.log('data received in getsales.js');
+//                 saveSalesData(data)
+//                 //console.log(data)
+//                 //salesData = data;
+//             })
+//             .catch(err => {
+//                 console.log("err received by getData.js")
+//                 console.log(err)
+//             });
+//         })
+//         break;
+// }
 
 
 
@@ -584,6 +642,8 @@ function saveSalesData(salesData) {
 
 
 }
+
+module.exports = { "updateSales": updateSales, "updateProducts": updateProducts, "updateModifiers": updateModifiers, "updateCategories": updateCategories };
 
 
 
