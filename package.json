@@ -4,11 +4,7 @@
   "description": "",
   "main": "ssrver.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "getsales": "node getdata.js sales",
-    "getproducts": "node getdata.js products",
-    "getcategories": "node getdata.js categories",
-    "getmodifiers": "node getdata.js modifiers"
+    "listen": "node updateListener.js"
   },
   "author": "Tom Whitelaw",
   "license": "ISC",
