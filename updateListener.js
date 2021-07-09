@@ -1,7 +1,7 @@
 const { updateSales, updateProducts, updateModifiers, updateCategories } = require('./getdata');
 const amqp = require('amqplib');
-const salesQueue = dm_sales_update;
-const staticDataQueue = dm_static_update;
+const salesQueue = "dm_sales_update";
+const staticDataQueue = "dm_static_update";
 const amqpServer = "amqp://localhost:5672";
 //5672 is the default port for rabbitmq
 	
@@ -15,11 +15,11 @@ async function connect() {
 		
 		const connection = await amqp.connect(amqpServer);
 		const channel = await connection.createChannel();
-		await channel.assertQueue(queueName, { durable: true });
+		await channel.assertQueue(salesQueue, { durable: true });
         await channel.assertQueue(staticDataQueue, { durable: true });
 		channel.prefetch(1);
 		channel.consume(salesQueue, msg => {
-			const recdMsg = JSON.parse(msg.content.toString());
+			// const recdMsg = JSON.parse(msg.content.toString());
 			
             //process message - initiate sales update
             updateSales();

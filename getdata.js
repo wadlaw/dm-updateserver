@@ -8,6 +8,8 @@ const db = new sqlite.Database('../database/db.sqlite');
 function updateSales() {
     let fromDateString = "2019-01-01";
     let offset = 0;
+    
+    console.log("updateSales triggered");
     db.get("SELECT FromDate, OffsetNumber FROM v_LatestUpdate", (err, row) => {
         if (!err && row.FromDate) {
             fromDateString = row.FromDate;
@@ -28,6 +30,7 @@ function updateSales() {
 }
 
 function updateCategories() {
+    console.log("updateCategories triggered");
     getData("categories")
     .then(data => {
         console.log("categories data received");
@@ -40,6 +43,7 @@ function updateCategories() {
 }
 
 function updateProducts() {
+    console.log("updateProducts triggered");
     getData("products")
     .then(data => {
         console.log("products data received");
@@ -52,6 +56,7 @@ function updateProducts() {
 }
 
 function updateModifiers() {
+    console.log("updateModifiers triggered");
     getData("modifiers")
     .then(data => {
         console.log("modifiers data received");

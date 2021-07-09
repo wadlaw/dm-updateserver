@@ -4,7 +4,10 @@
   "description": "",
   "main": "ssrver.js",
   "scripts": {
-    "listen": "node updateListener.js"
+    "listen": "node updateListener.js",
+    "updateCategories": "node updateCategories.js",
+    "updateProducts": "node updateProducts",
+    "updateModifiers": "node updateModifiers"
   },
   "author": "Tom Whitelaw",
   "license": "ISC",
